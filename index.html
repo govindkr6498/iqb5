@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .chatbot-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 900px;
+      height: 550px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chatbot-header {
+      background-color: #007bff;
+      color: white;
+      padding: 10px;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    .chatbot-messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background-color: #f9f9f9;
+    }
+
+    .message {
+      margin: 5px 0;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .message.user {
+      background-color: #007bff;
+      color: white;
+      text-align: right;
+    }
+
+    .message.bot {
+      background-color: #e9e9e9;
+      color: black;
+      padding: 10px;
+      word-wrap: break-word;
+    }
+
+    .chatbot-input {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+
+    .chatbot-input input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      outline: none;
+    }
+
+    /* Table Styling */
+    .message.bot table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 5px;
+    }
+
+    .message.bot th, .message.bot td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .message.bot th {
+      background-color: #007bff;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Chatbot button -->
+  <button class="chatbot-button" onclick="toggleChatbot()">💬</button>
+
+  <!-- Chatbot container -->
+  <div class="chatbot-container" id="chatbot">
+    <div class="chatbot-header">Chatbot</div>
+    <div class="chatbot-messages" id="chatMessages"></div>
+    <div class="chatbot-input">
+      <input type="text" id="userInput" placeholder="Type your message..." onkeypress="handleEnter(event)" />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    function toggleChatbot() {
+      const chatbot = document.getElementById('chatbot');
+      chatbot.style.display = chatbot.style.display === 'none' || chatbot.style.display === '' ? 'flex' : 'none';
+    }
+
+    async function sendMessage() {
+      const userInput = document.getElementById('userInput');
+      const chatMessages = document.getElementById('chatMessages');
+
+      if (userInput.value.trim() === '') return;
+
+      // Display user message
+      const userMessage = document.createElement('div');
+      userMessage.className = 'message user';
+      userMessage.textContent = userInput.value;
+      chatMessages.appendChild(userMessage);
+
+      const userMessageText = userInput.value;
+      userInput.value = '';
+
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/govind', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userMessageText }),
+        });
+
+        const data = await response.json();
+
+        // Display bot response
+        const botMessage = document.createElement('div');
+        botMessage.className = 'message bot';
+        
+        // Convert Markdown to HTML using Marked.js
+        botMessage.innerHTML = marked.parse(data.answer || 'I couldn\'t understand that.');
+        chatMessages.appendChild(botMessage);
+      } catch (error) {
+        const botMessage = document.createElement('div');
+        botMessage.className = 'message bot';
+        botMessage.textContent = 'An error occurred. Please try again.';
+        chatMessages.appendChild(botMessage);
+      }
+
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function handleEnter(event) {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    }
+  </script>
+
+</body>
+</html>
